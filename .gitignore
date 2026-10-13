@@ -1,0 +1,21 @@
+# Foundry
+/cache/
+/out/
+/broadcast/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# IDE and editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*~
+
+# Operating system
+.DS_Store
+Thumbs.db
