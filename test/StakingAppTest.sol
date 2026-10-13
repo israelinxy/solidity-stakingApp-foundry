@@ -14,11 +14,10 @@ contract StakingAppTest is Test {
     StakingToken stakingToken; // se declara primero porque lo necesitamos para el stakingapp
     StakingApp stakingApp;
 
-
     // StakingToken parameters
     string name_ = "Staking Token";
     string symbol_ = "STK";
-    
+
     // StakingApp parameters
     address owner_ = vm.addr(1);
     uint256 stakingPeriod_ = 100000000000;
@@ -29,276 +28,271 @@ contract StakingAppTest is Test {
 
     // funcion setup()
     function setUp() external {
-      // inicializar objetos sc con sus parametros
-      stakingToken = new StakingToken(name_, symbol_);
-      stakingApp = new StakingApp(address(stakingToken), owner_, stakingPeriod_, fixedStakingAmount_, rewardPerPeriod_);
+        // inicializar objetos sc con sus parametros
+        stakingToken = new StakingToken(name_, symbol_);
+        stakingApp =
+            new StakingApp(address(stakingToken), owner_, stakingPeriod_, fixedStakingAmount_, rewardPerPeriod_);
     }
 
     // 1 test es para comprobar que ambos sc se deployean correctamente
-    function testStakingTokenCorrectlyDeployed() external view{
-      assert(address(stakingToken) != address(0));
+    function testStakingTokenCorrectlyDeployed() external view {
+        assert(address(stakingToken) != address(0));
     }
-    
+
     function testStakingAppCorrectlyDeployed() external view {
-      assert(address(stakingApp) != address(0));
+        assert(address(stakingApp) != address(0));
     }
-    
+
     // 2 test de las funciones del sc StakingApp
     function testShoulRevertIfNotOwner() external {
-      uint256 newStakingPeriod_ = 1;
+        uint256 newStakingPeriod_ = 1;
 
-      vm.expectRevert();
-      stakingApp.changeStakingPeriod(newStakingPeriod_);
+        vm.expectRevert();
+        stakingApp.changeStakingPeriod(newStakingPeriod_);
     }
 
     function testShouldChangeStakingPeriod() external {
-      vm.startPrank(owner_);
-      uint256 newStakingPeriod_ = 1;
-      
-      uint256 stakingPeriodBefore = stakingApp.stakingPeriod();
-      stakingApp.changeStakingPeriod(newStakingPeriod_);
-      uint256 stakingPeriodAfter = stakingApp.stakingPeriod();
+        vm.startPrank(owner_);
+        uint256 newStakingPeriod_ = 1;
 
-      assert(stakingPeriodBefore != newStakingPeriod_);
-      assert(stakingPeriodAfter == newStakingPeriod_);
+        uint256 stakingPeriodBefore = stakingApp.stakingPeriod();
+        stakingApp.changeStakingPeriod(newStakingPeriod_);
+        uint256 stakingPeriodAfter = stakingApp.stakingPeriod();
 
-      vm.stopPrank();
+        assert(stakingPeriodBefore != newStakingPeriod_);
+        assert(stakingPeriodAfter == newStakingPeriod_);
+
+        vm.stopPrank();
     }
 
     function testContratReceiveEtherCorrectly() external {
-      vm.startPrank(owner_); // simula las llamadas desde el address indicado
-      vm.deal(owner_, 1 ether); // amount para cargar el saldo/balance de una address
+        vm.startPrank(owner_); // simula las llamadas desde el address indicado
+        vm.deal(owner_, 1 ether); // amount para cargar el saldo/balance de una address
 
-      uint256 etherValue = 1 ether;
+        uint256 etherValue = 1 ether;
 
-      uint256 balanceBefore = address(stakingApp).balance; // consulta el balance de una address
-      (bool success, ) = address(stakingApp).call{value: etherValue}(""); // envia ether a una address
-      require(success, "Transfer failed"); // comprueba que el envío es true
-      uint256 balanceAfter = address(stakingApp).balance; // consulta el balance de una address
+        uint256 balanceBefore = address(stakingApp).balance; // consulta el balance de una address
+        (bool success,) = address(stakingApp).call{value: etherValue}(""); // envia ether a una address
+        require(success, "Transfer failed"); // comprueba que el envío es true
+        uint256 balanceAfter = address(stakingApp).balance; // consulta el balance de una address
 
-      assert(balanceAfter - balanceBefore == etherValue); // comprueba que se ha enviado el amount indicado
+        assert(balanceAfter - balanceBefore == etherValue); // comprueba que se ha enviado el amount indicado
 
-      vm.stopPrank(); // fin de impersonar las llamadas a functions desde la address indicada
+        vm.stopPrank(); // fin de impersonar las llamadas a functions desde la address indicada
     }
 
     // Deposit function testing
 
     function testIncorrectAmountShouldRevert() external {
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-      uint256 depositAmount = 1;
-      vm.expectRevert("Incorrect amount");
-      stakingApp.depositTokens(depositAmount);
+        uint256 depositAmount = 1;
+        vm.expectRevert("Incorrect amount");
+        stakingApp.depositTokens(depositAmount);
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
 
     function testDepositTokensCorrectly() external {
-      vm.startPrank(randomUser); // address que va a depositar token
+        vm.startPrank(randomUser); // address que va a depositar token
 
-      uint256 tokenAmount = stakingApp.fixedStakingAmount();
-      stakingToken.mint(tokenAmount); //minteo del token
+        uint256 tokenAmount = stakingApp.fixedStakingAmount();
+        stakingToken.mint(tokenAmount); //minteo del token
 
-      uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
-      stakingApp.depositTokens(tokenAmount); // deposito de los tokens
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
-      uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
+        uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
+        stakingApp.depositTokens(tokenAmount); // deposito de los tokens
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
 
-      assert(userBalanceAfter - userBalanceBefore == tokenAmount);
-      assert(elapsePeriodBefore == 0);
-      assert(elapsePeriodAfter == block.timestamp);
+        assert(userBalanceAfter - userBalanceBefore == tokenAmount);
+        assert(elapsePeriodBefore == 0);
+        assert(elapsePeriodAfter == block.timestamp);
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
 
     function testUserCanNotDepositMoreThanOnce() external {
-      vm.startPrank(randomUser); // address que va a depositar token
+        vm.startPrank(randomUser); // address que va a depositar token
 
-      // First deposit
-      uint256 tokenAmount = stakingApp.fixedStakingAmount();
-      stakingToken.mint(tokenAmount); //minteo del token
+        // First deposit
+        uint256 tokenAmount = stakingApp.fixedStakingAmount();
+        stakingToken.mint(tokenAmount); //minteo del token
 
-      uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
-      stakingApp.depositTokens(tokenAmount); // deposito de los tokens
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
-      uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
+        uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
+        stakingApp.depositTokens(tokenAmount); // deposito de los tokens
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
 
-      assert(userBalanceAfter - userBalanceBefore == tokenAmount);
-      assert(elapsePeriodBefore == 0);
-      assert(elapsePeriodAfter == block.timestamp);
+        assert(userBalanceAfter - userBalanceBefore == tokenAmount);
+        assert(elapsePeriodBefore == 0);
+        assert(elapsePeriodAfter == block.timestamp);
 
+        // Second deposit
+        stakingToken.mint(tokenAmount);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount);
+        vm.expectRevert("User already deposited");
+        stakingApp.depositTokens(tokenAmount);
 
-      // Second deposit
-      stakingToken.mint(tokenAmount);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount);
-      vm.expectRevert("User already deposited");
-      stakingApp.depositTokens(tokenAmount);
-
-      vm.stopPrank();
+        vm.stopPrank();
     }
 
     // withdraw function tests
 
     function testCanOnlyWithdraw0WithoutDeposit() external {
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      stakingApp.withdrawStakingToken();
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        stakingApp.withdrawStakingToken();
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
 
-      assert(userBalanceAfter == userBalanceBefore);
+        assert(userBalanceAfter == userBalanceBefore);
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
 
     function testWithdrawTokensCorrectly() external {
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-      // 1. Deposit Tokens in stakingApp
-      uint256 tokenAmount = stakingApp.fixedStakingAmount();
-      stakingToken.mint(tokenAmount); //minteo del token
+        // 1. Deposit Tokens in stakingApp
+        uint256 tokenAmount = stakingApp.fixedStakingAmount();
+        stakingToken.mint(tokenAmount); //minteo del token
 
-      uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
-      stakingApp.depositTokens(tokenAmount); // deposito de los tokens
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
-      uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
+        uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
+        stakingApp.depositTokens(tokenAmount); // deposito de los tokens
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
 
-      assert(userBalanceAfter - userBalanceBefore == tokenAmount);
-      assert(elapsePeriodBefore == 0);
-      assert(elapsePeriodAfter == block.timestamp);
+        assert(userBalanceAfter - userBalanceBefore == tokenAmount);
+        assert(elapsePeriodBefore == 0);
+        assert(elapsePeriodAfter == block.timestamp);
 
-      // 2. Withdraw Tokens from stakingApp to randomUser
+        // 2. Withdraw Tokens from stakingApp to randomUser
 
-      uint256 walletBalanceBefore = IERC20(stakingToken).balanceOf(randomUser);
-      uint256 stakedBalanceBefore = stakingApp.userBalance(randomUser);
-      stakingApp.withdrawStakingToken();
-      uint256 walletBalanceAfter = IERC20(stakingToken).balanceOf(randomUser);
-      uint256 stakedBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 walletBalanceBefore = IERC20(stakingToken).balanceOf(randomUser);
+        uint256 stakedBalanceBefore = stakingApp.userBalance(randomUser);
+        stakingApp.withdrawStakingToken();
+        uint256 walletBalanceAfter = IERC20(stakingToken).balanceOf(randomUser);
+        uint256 stakedBalanceAfter = stakingApp.userBalance(randomUser);
 
-      assert(walletBalanceAfter == walletBalanceBefore + stakedBalanceBefore);
-      assert(stakedBalanceAfter == 0);
+        assert(walletBalanceAfter == walletBalanceBefore + stakedBalanceBefore);
+        assert(stakedBalanceAfter == 0);
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
-
 
     // ClaimRewards function tests
 
     function testCanNotClaimIfNotStaking() external {
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-      vm.expectRevert("Not staking");
-      stakingApp.claimRewards();
+        vm.expectRevert("Not staking");
+        stakingApp.claimRewards();
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
 
     function testCanNotClaimIfNotElapsedTime() external {
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-       // 1. Deposit Tokens in stakingApp
-      uint256 tokenAmount = stakingApp.fixedStakingAmount();
-      stakingToken.mint(tokenAmount); //minteo del token
+        // 1. Deposit Tokens in stakingApp
+        uint256 tokenAmount = stakingApp.fixedStakingAmount();
+        stakingToken.mint(tokenAmount); //minteo del token
 
-      uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
-      stakingApp.depositTokens(tokenAmount); // deposito de los tokens
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
-      uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
+        uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
+        stakingApp.depositTokens(tokenAmount); // deposito de los tokens
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
 
-      assert(userBalanceAfter - userBalanceBefore == tokenAmount);
-      assert(elapsePeriodBefore == 0);
-      assert(elapsePeriodAfter == block.timestamp);
+        assert(userBalanceAfter - userBalanceBefore == tokenAmount);
+        assert(elapsePeriodBefore == 0);
+        assert(elapsePeriodAfter == block.timestamp);
 
-      // 2. Claim Rewards
-      vm.expectRevert("Need to wait");
-      stakingApp.claimRewards();
+        // 2. Claim Rewards
+        vm.expectRevert("Need to wait");
+        stakingApp.claimRewards();
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
-
 
     function testShoulRevertIfNotEther() external {
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-       // 1. Deposit Tokens in stakingApp
-      uint256 tokenAmount = stakingApp.fixedStakingAmount();
-      stakingToken.mint(tokenAmount); //minteo del token
+        // 1. Deposit Tokens in stakingApp
+        uint256 tokenAmount = stakingApp.fixedStakingAmount();
+        stakingToken.mint(tokenAmount); //minteo del token
 
-      uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
-      stakingApp.depositTokens(tokenAmount); // deposito de los tokens
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
-      uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
+        uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
+        stakingApp.depositTokens(tokenAmount); // deposito de los tokens
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
 
-      assert(userBalanceAfter - userBalanceBefore == tokenAmount);
-      assert(elapsePeriodBefore == 0);
-      assert(elapsePeriodAfter == block.timestamp);
+        assert(userBalanceAfter - userBalanceBefore == tokenAmount);
+        assert(elapsePeriodBefore == 0);
+        assert(elapsePeriodAfter == block.timestamp);
 
-      // 2. Claim Rewards
-      vm.warp(block.timestamp + stakingPeriod_);
-      vm.expectRevert("Transfer failed");
-      stakingApp.claimRewards();
+        // 2. Claim Rewards
+        vm.warp(block.timestamp + stakingPeriod_);
+        vm.expectRevert("Transfer failed");
+        stakingApp.claimRewards();
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
-
 
     function testCanClaimRewardsCorrectly() external {
+        // 1. Deposit Tokens in stakingApp
 
-       // 1. Deposit Tokens in stakingApp
+        vm.startPrank(randomUser);
 
-      vm.startPrank(randomUser);
+        uint256 tokenAmount = stakingApp.fixedStakingAmount();
+        stakingToken.mint(tokenAmount); //minteo del token
 
-      uint256 tokenAmount = stakingApp.fixedStakingAmount();
-      stakingToken.mint(tokenAmount); //minteo del token
+        uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
+        uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
+        IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
+        stakingApp.depositTokens(tokenAmount); // deposito de los tokens
+        uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
+        uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
 
-      uint256 elapsePeriodBefore = stakingApp.elapsePeriod(randomUser);
-      uint256 userBalanceBefore = stakingApp.userBalance(randomUser);
-      IERC20(stakingToken).approve(address(stakingApp), tokenAmount); // Aprobar la address que va a poder gastar tokens
-      stakingApp.depositTokens(tokenAmount); // deposito de los tokens
-      uint256 userBalanceAfter = stakingApp.userBalance(randomUser);
-      uint256 elapsePeriodAfter = stakingApp.elapsePeriod(randomUser);
+        assert(userBalanceAfter - userBalanceBefore == tokenAmount);
+        assert(elapsePeriodBefore == 0);
+        assert(elapsePeriodAfter == block.timestamp);
 
-      assert(userBalanceAfter - userBalanceBefore == tokenAmount);
-      assert(elapsePeriodBefore == 0);
-      assert(elapsePeriodAfter == block.timestamp);
+        vm.stopPrank();
 
-      vm.stopPrank();
+        // 2. Mandar fondos a StakingApp
 
-      // 2. Mandar fondos a StakingApp
-      
-      vm.startPrank(owner_);
+        vm.startPrank(owner_);
 
-      uint256 etherAmount = 10000 ether;
-      vm.deal(owner_, etherAmount);
-      (bool success, ) = address(stakingApp).call{value: etherAmount}("");
-      require(success, "Test transfer failed");
+        uint256 etherAmount = 10000 ether;
+        vm.deal(owner_, etherAmount);
+        (bool success,) = address(stakingApp).call{value: etherAmount}("");
+        require(success, "Test transfer failed");
 
-      vm.stopPrank();
+        vm.stopPrank();
 
-      // 3. Claim Rewards
+        // 3. Claim Rewards
 
-      vm.startPrank(randomUser);
+        vm.startPrank(randomUser);
 
-      vm.warp(block.timestamp + stakingPeriod_);
-      uint256 etherAmountBefore = address(randomUser).balance;
-      stakingApp.claimRewards();
-      uint256 etherAmountAfter = address(randomUser).balance;
-      uint256 elapsedPeriod = stakingApp.elapsePeriod(randomUser);
+        vm.warp(block.timestamp + stakingPeriod_);
+        uint256 etherAmountBefore = address(randomUser).balance;
+        stakingApp.claimRewards();
+        uint256 etherAmountAfter = address(randomUser).balance;
+        uint256 elapsedPeriod = stakingApp.elapsePeriod(randomUser);
 
-      assert(etherAmountAfter - etherAmountBefore == rewardPerPeriod_);
-      assert(elapsedPeriod == block.timestamp);
+        assert(etherAmountAfter - etherAmountBefore == rewardPerPeriod_);
+        assert(elapsedPeriod == block.timestamp);
 
-      vm.stopPrank();
+        vm.stopPrank();
     }
-
 }
